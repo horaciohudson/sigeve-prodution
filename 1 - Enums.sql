@@ -1,0 +1,9 @@
+CREATE TYPE login_event_type AS ENUM (
+      'LOGIN_SUCCESS','LOGIN_FAIL'
+    );
+
+CREATE TYPE receivable_status AS ENUM (
+      'PENDING','SCHEDULED','IN_PROCESS','RECEIVED','PARTIAL',
+      'OVERDUE','CANCELLED','REJECTED','REFUNDED','ON_HOLD',
+      'DISPUTED','FAILED'
+    );

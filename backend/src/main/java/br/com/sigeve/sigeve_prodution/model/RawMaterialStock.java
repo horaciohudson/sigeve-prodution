@@ -29,7 +29,7 @@ public class RawMaterialStock {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
-    @Column(name = "id", columnDefinition = "uuid")
+    @Column(name = "raw_material_stock_id", columnDefinition = "uuid")
     private UUID id;
 
     @NotNull

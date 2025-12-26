@@ -1,0 +1,6 @@
+Estamos trabalhando com Vestuário que existem tamanhos e cores, para a
+ordem de produção, no momento, não existe esta diferenciação.
+Precisamos criar uma grade para selecionar tamanhos, cores para a ordem de produção
+de forma que no final some a quantidade da ordem emitida.
+Grade de Produção, crie a entity que ela criará a tabela que estará conectada
+a tabela de ordem de produção.

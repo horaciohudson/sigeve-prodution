@@ -229,6 +229,7 @@ public class ProductionOrderService {
         dto.setCompanyId(order.getCompanyId());
         dto.setCode(order.getCode());
         dto.setProductId(order.getProductId());
+        dto.setProductName(order.getProduct() != null ? order.getProduct().getName() : null);
         dto.setQuantityPlanned(order.getQuantityPlanned());
         dto.setQuantityProduced(order.getQuantityProduced());
         dto.setStatus(order.getStatus());

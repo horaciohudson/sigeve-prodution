@@ -39,4 +39,9 @@ public class CompositionDTO {
     // Aprovação
     private String approvedBy;
     private OffsetDateTime approvedAt;
+    
+    // Detalhes adicionais
+    private String productName;
+    private Integer itemsCount;
+    private BigDecimal totalCost;
 }

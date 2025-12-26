@@ -1,6 +1,8 @@
 package br.com.sigeve.sigeve_prodution.service;
 
 import br.com.sigeve.sigeve_prodution.dto.CompositionItemDTO;
+import br.com.sigeve.sigeve_prodution.dto.CompositionCostSummaryDTO;
+import br.com.sigeve.sigeve_prodution.dto.CompositionItemCostDTO;
 import br.com.sigeve.sigeve_prodution.dto.CreateCompositionItemDTO;
 import br.com.sigeve.sigeve_prodution.dto.UpdateCompositionItemDTO;
 import br.com.sigeve.sigeve_prodution.model.CompositionItem;
@@ -100,6 +102,41 @@ public class CompositionItemService {
 
         compositionItemRepository.save(item);
         log.info("Item de composição deletado com sucesso: {}", id);
+    }
+
+    @Transactional(readOnly = true)
+    public CompositionCostSummaryDTO calculateCompositionCosts(UUID compositionId) {
+        log.debug("Calculando custos da composição: {}", compositionId);
+
+        List<CompositionItem> items = compositionItemRepository
+                .findByCompositionIdAndDeletedAtIsNullOrderBySequence(compositionId);
+
+        List<CompositionItemCostDTO> itemsCost = items.stream()
+                .map(item -> {
+                    CompositionItemCostDTO costDTO = new CompositionItemCostDTO();
+                    costDTO.setItemId(item.getId());
+                    costDTO.setQuantity(item.getQuantity());
+                    costDTO.setUnitCost(item.getUnitCost());
+                    costDTO.setLossPercentage(item.getLossPercentage());
+                    costDTO.setTotalCost(item.getTotalCost());
+                    return costDTO;
+                })
+                .collect(Collectors.toList());
+
+        java.math.BigDecimal totalCost = itemsCost.stream()
+                .map(CompositionItemCostDTO::getTotalCost)
+                .filter(cost -> cost != null)
+                .reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add);
+
+        CompositionCostSummaryDTO summary = new CompositionCostSummaryDTO();
+        summary.setTotalItems(items.size());
+        summary.setTotalCost(totalCost);
+        summary.setItemsCost(itemsCost);
+
+        log.info("Custos calculados para composição {}: {} itens, total R$ {}", 
+                compositionId, items.size(), totalCost);
+
+        return summary;
     }
 
     private CompositionItemDTO convertToDTO(CompositionItem item) {

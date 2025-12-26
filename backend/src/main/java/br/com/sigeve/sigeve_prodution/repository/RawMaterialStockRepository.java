@@ -22,6 +22,11 @@ public interface RawMaterialStockRepository extends JpaRepository<RawMaterialSto
     Optional<RawMaterialStock> findByRawMaterialIdAndWarehouseId(UUID rawMaterialId, UUID warehouseId);
 
     /**
+     * Busca estoque por empresa, matéria-prima e warehouse
+     */
+    Optional<RawMaterialStock> findByCompanyIdAndRawMaterialIdAndWarehouseId(UUID companyId, UUID rawMaterialId, UUID warehouseId);
+
+    /**
      * Busca todos os estoques de uma empresa
      */
     List<RawMaterialStock> findByCompanyId(UUID companyId);

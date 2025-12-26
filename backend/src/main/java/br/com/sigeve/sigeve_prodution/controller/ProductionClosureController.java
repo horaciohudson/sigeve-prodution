@@ -122,7 +122,7 @@ public class ProductionClosureController {
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();
-        return claims.getSubject();
+        return (String) claims.get("username");
     }
 
     private String extractTokenFromRequest(HttpServletRequest request) {

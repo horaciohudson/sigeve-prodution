@@ -35,7 +35,7 @@ public class Tenant extends AuditDouble {
     @Column(nullable = false, length = 120)
     private String name;
 
-    @Column(nullable = false, columnDefinition = "user_status")
+    @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private UserStatus status = UserStatus.ACTIVE;
 

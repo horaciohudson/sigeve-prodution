@@ -32,7 +32,7 @@ public class RawMaterial extends AuditFull {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
-    @Column(name = "id", columnDefinition = "uuid")
+    @Column(name = "raw_material_id", columnDefinition = "uuid")
     private UUID id;
 
     @NotNull

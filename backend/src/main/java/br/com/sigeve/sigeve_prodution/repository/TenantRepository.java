@@ -15,10 +15,10 @@ public interface TenantRepository extends JpaRepository<Tenant, UUID> {
 
     Optional<Tenant> findByCode(String code);
     
-    @Query(value = "SELECT * FROM tab_tenants WHERE code = :code AND status = CAST(:status AS user_status)", nativeQuery = true)
+    @Query(value = "SELECT * FROM tab_tenants WHERE code = :code AND status = :status", nativeQuery = true)
     Optional<Tenant> findByCodeAndStatus(@Param("code") String code, @Param("status") String status);
     
-    @Query(value = "SELECT * FROM tab_tenants WHERE status = CAST(:status AS user_status) ORDER BY name", nativeQuery = true)
+    @Query(value = "SELECT * FROM tab_tenants WHERE status = :status ORDER BY name", nativeQuery = true)
     List<Tenant> findByStatusOrderByName(@Param("status") String status);
     
     List<Tenant> findAllByOrderByName();

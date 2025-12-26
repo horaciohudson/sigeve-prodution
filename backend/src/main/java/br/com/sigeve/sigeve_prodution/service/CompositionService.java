@@ -24,6 +24,8 @@ import java.util.stream.Collectors;
 public class CompositionService {
 
     private final CompositionRepository compositionRepository;
+    private final CompositionItemService compositionItemService;
+    private final br.com.sigeve.sigeve_prodution.repository.ProductionProductRepository productionProductRepository;
 
     @Transactional(readOnly = true)
     public List<CompositionDTO> findAllByCompany(UUID companyId) {
@@ -114,8 +116,6 @@ public class CompositionService {
     }
 
     public CompositionDTO approve(UUID id, String approvedBy) {
-        log.debug("Aprovando composição: {}", id);
-
         Composition composition = compositionRepository.findByIdAndDeletedAtIsNull(id)
                 .orElseThrow(() -> new IllegalArgumentException("Composição não encontrada: " + id));
 
@@ -123,7 +123,6 @@ public class CompositionService {
         composition.setApprovedAt(LocalDateTime.now());
 
         Composition saved = compositionRepository.save(composition);
-        log.info("Composição aprovada: {}", id);
 
         return convertToDTO(saved);
     }
@@ -146,6 +145,45 @@ public class CompositionService {
         dto.setUpdatedBy(composition.getUpdatedBy());
         dto.setApprovedBy(composition.getApprovedBy());
         dto.setApprovedAt(composition.getApprovedAt() != null ? composition.getApprovedAt().atOffset(OffsetDateTime.now().getOffset()) : null);
+        
+        log.info("🔍 [BACKEND] Convertendo Composition {} para DTO. ApprovedBy: {}, isApprovedEntity: {}", 
+                composition.getId(), composition.getApprovedBy(), composition.isApproved());
+        
+        // Buscar nome do produto
+        productionProductRepository.findById(composition.getProductionProductId())
+                .ifPresent(product -> dto.setProductName(product.getDescription()));
+        
+        // Usar totalCost armazenado na entity
+        dto.setTotalCost(composition.getTotalCost());
+        
+        // Calcular contagem de itens
+        try {
+            var costSummary = compositionItemService.calculateCompositionCosts(composition.getId());
+            dto.setItemsCount(costSummary.getTotalItems());
+        } catch (Exception e) {
+            log.warn("Erro ao contar itens da composição {}: {}", composition.getId(), e.getMessage());
+            dto.setItemsCount(0);
+        }
+        
         return dto;
+    }
+
+    // Método para recalcular e atualizar o custo total da composição
+    public void recalculateTotalCost(UUID compositionId) {
+        log.debug("Recalculando custo total da composição: {}", compositionId);
+        
+        Composition composition = compositionRepository.findByIdAndDeletedAtIsNull(compositionId)
+                .orElseThrow(() -> new IllegalArgumentException("Composição não encontrada: " + compositionId));
+        
+        try {
+            var costSummary = compositionItemService.calculateCompositionCosts(compositionId);
+            composition.setTotalCost(costSummary.getTotalCost());
+            compositionRepository.save(composition);
+            
+            log.info("Custo total da composição {} atualizado para: {}", compositionId, costSummary.getTotalCost());
+        } catch (Exception e) {
+            log.error("Erro ao recalcular custo total da composição {}: {}", compositionId, e.getMessage());
+            throw new RuntimeException("Erro ao recalcular custo total", e);
+        }
     }
 }

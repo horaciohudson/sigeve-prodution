@@ -1,6 +1,7 @@
 package br.com.sigeve.sigeve_prodution.controller;
 
 import br.com.sigeve.sigeve_prodution.dto.CompositionItemDTO;
+import br.com.sigeve.sigeve_prodution.dto.CompositionCostSummaryDTO;
 import br.com.sigeve.sigeve_prodution.dto.CreateCompositionItemDTO;
 import br.com.sigeve.sigeve_prodution.dto.UpdateCompositionItemDTO;
 import br.com.sigeve.sigeve_prodution.service.CompositionItemService;
@@ -17,6 +18,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.nio.charset.StandardCharsets;
+import java.security.Principal;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -29,9 +31,7 @@ import java.util.UUID;
 public class CompositionItemController {
 
     private final CompositionItemService compositionItemService;
-
-    @Value("${app.jwt.secret}")
-    private String jwtSecret;
+    private final br.com.sigeve.sigeve_prodution.service.CompositionService compositionService;
 
     @GetMapping("/composition/{compositionId}")
     public ResponseEntity<List<CompositionItemDTO>> getByComposition(@PathVariable UUID compositionId) {
@@ -60,16 +60,33 @@ public class CompositionItemController {
         }
     }
 
+    @GetMapping("/composition/{compositionId}/costs")
+    public ResponseEntity<CompositionCostSummaryDTO> calculateCosts(@PathVariable UUID compositionId) {
+        try {
+            log.info("Calculando custos da composição: {}", compositionId);
+
+            CompositionCostSummaryDTO costs = compositionItemService.calculateCompositionCosts(compositionId);
+            return ResponseEntity.ok(costs);
+        } catch (Exception e) {
+            log.error("Erro ao calcular custos da composição: {}", compositionId, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
     @PostMapping
     public ResponseEntity<CompositionItemDTO> create(
             @Valid @RequestBody CreateCompositionItemDTO request,
-            HttpServletRequest httpRequest) {
+            Principal principal) {
         try {
-            String username = extractUsernameFromToken(httpRequest);
+            String username = principal.getName();
 
             log.info("Criando novo item de composição por usuário: {}", username);
 
             CompositionItemDTO created = compositionItemService.create(request, username);
+            
+            // Recalcular custo total da composição
+            compositionService.recalculateTotalCost(request.getCompositionId());
+            
             return ResponseEntity.status(HttpStatus.CREATED).body(created);
         } catch (IllegalArgumentException e) {
             log.error("Erro de validação ao criar item: {}", e.getMessage());
@@ -84,13 +101,23 @@ public class CompositionItemController {
     public ResponseEntity<CompositionItemDTO> update(
             @PathVariable UUID id,
             @Valid @RequestBody UpdateCompositionItemDTO request,
-            HttpServletRequest httpRequest) {
+            Principal principal) {
         try {
-            String username = extractUsernameFromToken(httpRequest);
+            String username = principal.getName();
 
             log.info("Atualizando item de composição: {} por usuário: {}", id, username);
 
+            // Buscar compositionId do item antes de atualizar
+            var existingItem = compositionItemService.findById(id);
+            UUID compositionId = existingItem.map(i -> i.getCompositionId()).orElse(null);
+
             CompositionItemDTO updated = compositionItemService.update(id, request, username);
+            
+            // Recalcular custo total da composição
+            if (compositionId != null) {
+                compositionService.recalculateTotalCost(compositionId);
+            }
+            
             return ResponseEntity.ok(updated);
         } catch (IllegalArgumentException e) {
             log.error("Erro de validação ao atualizar item: {}", e.getMessage());
@@ -104,13 +131,23 @@ public class CompositionItemController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(
             @PathVariable UUID id,
-            HttpServletRequest httpRequest) {
+            Principal principal) {
         try {
-            String username = extractUsernameFromToken(httpRequest);
+            String username = principal.getName();
 
             log.info("Deletando item de composição: {} por usuário: {}", id, username);
 
+            // Buscar compositionId antes de deletar
+            var item = compositionItemService.findById(id);
+            UUID compositionId = item.map(i -> i.getCompositionId()).orElse(null);
+            
             compositionItemService.delete(id, username);
+            
+            // Recalcular custo total da composição
+            if (compositionId != null) {
+                compositionService.recalculateTotalCost(compositionId);
+            }
+            
             return ResponseEntity.noContent().build();
         } catch (IllegalArgumentException e) {
             log.error("Erro de validação ao deletar item: {}", e.getMessage());
@@ -119,23 +156,5 @@ public class CompositionItemController {
             log.error("Erro ao deletar item de composição: {}", id, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
-    }
-
-    private String extractUsernameFromToken(HttpServletRequest request) {
-        String token = extractTokenFromRequest(request);
-        Claims claims = Jwts.parser()
-                .verifyWith((javax.crypto.SecretKey) Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8)))
-                .build()
-                .parseSignedClaims(token)
-                .getPayload();
-        return claims.getSubject();
-    }
-
-    private String extractTokenFromRequest(HttpServletRequest request) {
-        String bearerToken = request.getHeader("Authorization");
-        if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
-            return bearerToken.substring(7);
-        }
-        throw new RuntimeException("Token JWT não encontrado");
     }
 }

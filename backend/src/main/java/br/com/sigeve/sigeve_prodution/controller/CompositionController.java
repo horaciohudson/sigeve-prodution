@@ -17,6 +17,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.nio.charset.StandardCharsets;
+import java.security.Principal;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -29,9 +30,6 @@ import java.util.UUID;
 public class CompositionController {
 
     private final CompositionService compositionService;
-
-    @Value("${app.jwt.secret}")
-    private String jwtSecret;
 
     @GetMapping
     public ResponseEntity<List<CompositionDTO>> getAllByCompany(
@@ -81,9 +79,9 @@ public class CompositionController {
     @PostMapping
     public ResponseEntity<CompositionDTO> create(
             @Valid @RequestBody CreateCompositionDTO request,
-            HttpServletRequest httpRequest) {
+            Principal principal) {
         try {
-            String username = extractUsernameFromToken(httpRequest);
+            String username = principal.getName();
 
             log.info("Criando nova composição: {} por usuário: {}", request.getName(), username);
 
@@ -102,9 +100,9 @@ public class CompositionController {
     public ResponseEntity<CompositionDTO> update(
             @PathVariable UUID id,
             @Valid @RequestBody UpdateCompositionDTO request,
-            HttpServletRequest httpRequest) {
+            Principal principal) {
         try {
-            String username = extractUsernameFromToken(httpRequest);
+            String username = principal.getName();
 
             log.info("Atualizando composição: {} por usuário: {}", id, username);
 
@@ -122,9 +120,9 @@ public class CompositionController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(
             @PathVariable UUID id,
-            HttpServletRequest httpRequest) {
+            Principal principal) {
         try {
-            String username = extractUsernameFromToken(httpRequest);
+            String username = principal.getName();
 
             log.info("Deletando composição: {} por usuário: {}", id, username);
 
@@ -142,9 +140,9 @@ public class CompositionController {
     @PostMapping("/{id}/approve")
     public ResponseEntity<CompositionDTO> approve(
             @PathVariable UUID id,
-            HttpServletRequest httpRequest) {
+            Principal principal) {
         try {
-            String username = extractUsernameFromToken(httpRequest);
+            String username = principal.getName();
 
             log.info("Aprovando composição: {} por usuário: {}", id, username);
 
@@ -159,21 +157,32 @@ public class CompositionController {
         }
     }
 
-    private String extractUsernameFromToken(HttpServletRequest request) {
-        String token = extractTokenFromRequest(request);
-        Claims claims = Jwts.parser()
-                .verifyWith((javax.crypto.SecretKey) Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8)))
-                .build()
-                .parseSignedClaims(token)
-                .getPayload();
-        return claims.getSubject();
+    @PostMapping("/recalculate-costs")
+    public ResponseEntity<String> recalculateAllCosts(@RequestParam UUID companyId) {
+        try {
+            log.info("Recalculando custos de todas as composições da empresa: {}", companyId);
+
+            List<CompositionDTO> compositions = compositionService.findAllByCompany(companyId);
+            int count = 0;
+            
+            for (CompositionDTO comp : compositions) {
+                try {
+                    compositionService.recalculateTotalCost(comp.getId());
+                    count++;
+                } catch (Exception e) {
+                    log.warn("Erro ao recalcular composição {}: {}", comp.getId(), e.getMessage());
+                }
+            }
+
+            String message = String.format("Recalculados custos de %d composições", count);
+            log.info(message);
+            return ResponseEntity.ok(message);
+        } catch (Exception e) {
+            log.error("Erro ao recalcular custos", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Erro ao recalcular custos: " + e.getMessage());
+        }
     }
 
-    private String extractTokenFromRequest(HttpServletRequest request) {
-        String bearerToken = request.getHeader("Authorization");
-        if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
-            return bearerToken.substring(7);
-        }
-        throw new RuntimeException("Token JWT não encontrado");
-    }
 }
+

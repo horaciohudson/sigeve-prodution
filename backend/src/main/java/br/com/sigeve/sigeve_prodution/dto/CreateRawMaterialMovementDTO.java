@@ -11,6 +11,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
@@ -40,7 +41,7 @@ public class CreateRawMaterialMovementDTO {
     @Size(max = 100, message = "Número do documento deve ter no máximo 100 caracteres")
     private String documentNumber;
     
-    private OffsetDateTime movementDate;
+    private LocalDate movementDate;
     
     @NotNull(message = "Quantidade é obrigatória")
     @Positive(message = "Quantidade deve ser positiva")

@@ -30,7 +30,7 @@ public class ProductionProduct extends AuditFull {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
-    @Column(name = "id", columnDefinition = "uuid")
+    @Column(name = "production_product_id", columnDefinition = "uuid")
     private UUID id;
 
     @NotNull
@@ -90,6 +90,10 @@ public class ProductionProduct extends AuditFull {
     private Integer version = 1;
 
     // Métodos auxiliares
+    public String getName() {
+        return this.description;
+    }
+
     public boolean isActive() {
         return Boolean.TRUE.equals(this.isActive);
     }

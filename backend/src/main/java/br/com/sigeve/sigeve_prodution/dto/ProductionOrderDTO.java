@@ -24,6 +24,7 @@ public class ProductionOrderDTO {
     
     private String code;
     private UUID productId;
+    private String productName;
     
     private BigDecimal quantityPlanned;
     private BigDecimal quantityProduced;

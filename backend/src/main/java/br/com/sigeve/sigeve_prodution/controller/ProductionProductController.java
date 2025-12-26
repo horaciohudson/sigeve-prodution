@@ -38,7 +38,7 @@ public class ProductionProductController {
      */
     @GetMapping
     public ResponseEntity<List<ProductionProductDTO>> getAllByCompany(
-            @RequestParam UUID companyId,
+            @RequestHeader("X-Company-ID") UUID companyId,
             @RequestParam(required = false, defaultValue = "false") Boolean activeOnly) {
         try {
             log.info("Listando produtos de produção da empresa: {}", companyId);
@@ -77,7 +77,7 @@ public class ProductionProductController {
     @GetMapping("/sku/{sku}")
     public ResponseEntity<ProductionProductDTO> getBySku(
             @PathVariable String sku,
-            @RequestParam UUID companyId) {
+            @RequestHeader("X-Company-ID") UUID companyId) {
         try {
             log.info("Buscando produto por SKU: {} na empresa: {}", sku, companyId);
 
@@ -96,9 +96,15 @@ public class ProductionProductController {
     @PostMapping
     public ResponseEntity<ProductionProductDTO> create(
             @Valid @RequestBody CreateProductionProductDTO request,
+            @RequestHeader("X-Tenant-ID") UUID tenantId,
+            @RequestHeader("X-Company-ID") UUID companyId,
             HttpServletRequest httpRequest) {
         try {
             String username = extractUsernameFromToken(httpRequest);
+
+            // Forçar IDs do contexto
+            request.setTenantId(tenantId);
+            request.setCompanyId(companyId);
 
             log.info("Criando novo produto de produção: {} por usuário: {}", request.getDescription(), username);
 
@@ -120,13 +126,14 @@ public class ProductionProductController {
     public ResponseEntity<ProductionProductDTO> update(
             @PathVariable UUID id,
             @Valid @RequestBody UpdateProductionProductDTO request,
+            @RequestHeader("X-Company-ID") UUID companyId,
             HttpServletRequest httpRequest) {
         try {
             String username = extractUsernameFromToken(httpRequest);
 
             log.info("Atualizando produto de produção: {} por usuário: {}", id, username);
 
-            ProductionProductDTO updated = productionProductService.update(id, request, username);
+            ProductionProductDTO updated = productionProductService.update(id, request, companyId, username);
             return ResponseEntity.ok(updated);
         } catch (IllegalArgumentException e) {
             log.error("Erro de validação ao atualizar produto: {}", e.getMessage());
@@ -143,13 +150,14 @@ public class ProductionProductController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(
             @PathVariable UUID id,
+            @RequestHeader("X-Company-ID") UUID companyId,
             HttpServletRequest httpRequest) {
         try {
             String username = extractUsernameFromToken(httpRequest);
 
             log.info("Deletando produto de produção: {} por usuário: {}", id, username);
 
-            productionProductService.delete(id, username);
+            productionProductService.delete(id, companyId, username);
             return ResponseEntity.noContent().build();
         } catch (IllegalArgumentException e) {
             log.error("Erro de validação ao deletar produto: {}", e.getMessage());

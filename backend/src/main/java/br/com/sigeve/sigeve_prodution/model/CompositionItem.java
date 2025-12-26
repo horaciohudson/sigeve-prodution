@@ -29,7 +29,7 @@ public class CompositionItem extends AuditFull {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
-    @Column(name = "id", columnDefinition = "uuid")
+    @Column(name = "composition_item_id", columnDefinition = "uuid")
     private UUID id;
 
     @NotNull
@@ -126,7 +126,8 @@ public class CompositionItem extends AuditFull {
     public void calculateTotalCost() {
         if (unitCost != null && quantity != null) {
             BigDecimal quantityWithLoss = getQuantityWithLoss();
-            this.totalCost = unitCost.multiply(quantityWithLoss);
+            this.totalCost = unitCost.multiply(quantityWithLoss)
+                .setScale(4, BigDecimal.ROUND_HALF_UP);
         }
     }
 

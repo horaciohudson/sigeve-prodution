@@ -108,11 +108,15 @@ public class ProductionProductService {
     /**
      * Atualiza um produto de produção existente
      */
-    public ProductionProductDTO update(UUID id, UpdateProductionProductDTO request, String updatedBy) {
+    public ProductionProductDTO update(UUID id, UpdateProductionProductDTO request, UUID companyId, String updatedBy) {
         log.debug("Atualizando produto de produção: {}", id);
 
         ProductionProduct product = productionProductRepository.findByIdAndDeletedAtIsNull(id)
                 .orElseThrow(() -> new IllegalArgumentException("Produto não encontrado: " + id));
+
+        if (!product.getCompanyId().equals(companyId)) {
+            throw new IllegalArgumentException("Produto não pertence à empresa informada");
+        }
 
         // Verificar SKU duplicado
         if (request.getSku() != null && !request.getSku().equals(product.getSku())) {
@@ -146,11 +150,15 @@ public class ProductionProductService {
     /**
      * Deleta um produto de produção (soft delete)
      */
-    public void delete(UUID id, String deletedBy) {
+    public void delete(UUID id, UUID companyId, String deletedBy) {
         log.debug("Deletando produto de produção: {}", id);
 
         ProductionProduct product = productionProductRepository.findByIdAndDeletedAtIsNull(id)
                 .orElseThrow(() -> new IllegalArgumentException("Produto não encontrado: " + id));
+
+        if (!product.getCompanyId().equals(companyId)) {
+            throw new IllegalArgumentException("Produto não pertence à empresa informada");
+        }
 
         product.setDeletedAt(LocalDateTime.now());
         product.setDeletedBy(deletedBy);

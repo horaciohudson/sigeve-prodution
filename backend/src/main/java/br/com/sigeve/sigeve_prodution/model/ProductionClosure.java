@@ -29,7 +29,7 @@ public class ProductionClosure {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
-    @Column(name = "id", columnDefinition = "uuid")
+    @Column(name = "production_closure_id", columnDefinition = "uuid")
     private UUID id;
 
     @NotNull

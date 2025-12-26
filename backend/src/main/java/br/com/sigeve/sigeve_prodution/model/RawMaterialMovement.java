@@ -30,7 +30,7 @@ public class RawMaterialMovement {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
-    @Column(name = "id", columnDefinition = "uuid")
+    @Column(name = "raw_material_movement_id", columnDefinition = "uuid")
     private UUID id;
 
     @NotNull

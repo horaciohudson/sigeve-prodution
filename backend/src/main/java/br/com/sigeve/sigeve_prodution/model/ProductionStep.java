@@ -26,7 +26,7 @@ public class ProductionStep extends AuditFull {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
-    @Column(name = "id", columnDefinition = "uuid")
+    @Column(name = "production_step_id", columnDefinition = "uuid")
     private UUID id;
 
     @NotNull

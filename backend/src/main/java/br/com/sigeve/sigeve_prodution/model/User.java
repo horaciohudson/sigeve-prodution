@@ -46,7 +46,7 @@ public class User extends br.com.sigeve.sigeve_prodution.model.AuditFull {
     @Column(name="full_name", nullable=false, length=100)
     private String fullName;
 
-    @Column(nullable=false, columnDefinition = "user_status")
+    @Column(nullable=false)
     @Enumerated(EnumType.STRING)
     private br.com.sigeve.sigeve_prodution.enums.UserStatus status = br.com.sigeve.sigeve_prodution.enums.UserStatus.ACTIVE;
 

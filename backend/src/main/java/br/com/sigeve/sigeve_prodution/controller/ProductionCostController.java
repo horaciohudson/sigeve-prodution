@@ -165,7 +165,7 @@ public class ProductionCostController {
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();
-        return claims.getSubject();
+        return claims.get("username", String.class);
     }
 
     private String extractTokenFromRequest(HttpServletRequest request) {

@@ -7,6 +7,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -30,7 +31,7 @@ public class Composition extends AuditFull {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
-    @Column(name = "id", columnDefinition = "uuid")
+    @Column(name = "composition_id", columnDefinition = "uuid")
     private UUID id;
 
     @NotNull
@@ -82,6 +83,12 @@ public class Composition extends AuditFull {
 
     @Column(name = "approved_at")
     private LocalDateTime approvedAt;
+
+    // Custo
+    @DecimalMin(value = "0.0000")
+    @Digits(integer = 15, fraction = 4)
+    @Column(name = "total_cost", precision = 15, scale = 4)
+    private BigDecimal totalCost = BigDecimal.ZERO;
 
     // Métodos auxiliares
     public boolean isActive() {

@@ -22,6 +22,7 @@ import java.util.stream.Collectors;
 public class RawMaterialMovementService {
 
     private final RawMaterialMovementRepository rawMaterialMovementRepository;
+    private final RawMaterialStockService rawMaterialStockService;
 
     @Transactional(readOnly = true)
     public List<RawMaterialMovementDTO> findByCompany(UUID companyId) {
@@ -50,7 +51,7 @@ public class RawMaterialMovementService {
         movement.setMovementOrigin(request.getMovementOrigin());
         movement.setOriginId(request.getOriginId());
         movement.setDocumentNumber(request.getDocumentNumber());
-        movement.setMovementDate(request.getMovementDate() != null ? request.getMovementDate().toLocalDateTime() : LocalDateTime.now());
+        movement.setMovementDate(request.getMovementDate() != null ? request.getMovementDate().atStartOfDay() : LocalDateTime.now());
         movement.setQuantity(request.getQuantity());
         movement.setUnitCost(request.getUnitCost());
         movement.setTotalCost(request.getTotalCost());
@@ -60,6 +61,9 @@ public class RawMaterialMovementService {
 
         RawMaterialMovement saved = rawMaterialMovementRepository.save(movement);
         log.info("Movimento de estoque criado com sucesso: {}", saved.getId());
+
+        // Atualiza o saldo do estoque
+        rawMaterialStockService.updateStock(saved);
 
         return convertToDTO(saved);
     }

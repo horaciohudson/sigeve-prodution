@@ -85,7 +85,17 @@ public class TenantService {
         Tenant tenant = new Tenant();
         tenant.setCode(request.getCode());
         tenant.setName(request.getName());
-        tenant.setStatus(UserStatus.ACTIVE);
+        
+        // Converter status de string para enum, default ACTIVE se não fornecido
+        UserStatus status = UserStatus.ACTIVE;
+        if (request.getStatus() != null && !request.getStatus().isEmpty()) {
+            try {
+                status = UserStatus.valueOf(request.getStatus().toUpperCase());
+            } catch (IllegalArgumentException e) {
+                log.warn("Status inválido fornecido: {}, usando ACTIVE como padrão", request.getStatus());
+            }
+        }
+        tenant.setStatus(status);
         tenant.setCreatedBy(createdBy);
 
         Tenant savedTenant = tenantRepository.save(tenant);
